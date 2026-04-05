@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AutoFlow — AI Workflow Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --accent: #7c6bff;
+  --accent2: #ff6b9d;
+  --accent3: #6bffcc;
+  --accent4: #ffb86b;
+  --text: #e8e8f0;
+  --text2: #8888aa;
+  --text3: #5555770;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --glow: rgba(124,107,255,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% -10%,rgba(124,107,255,0.08),transparent),radial-gradient(ellipse 60% 50% at 80% 110%,rgba(255,107,157,0.06),transparent);pointer-events:none;z-index:0}
+
+/* ─── Header ─── */
+header{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem}
+.header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;display:flex;align-items:center;gap:.5rem}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:grid;place-items:center;font-size:14px}
+.logo-sub{font-size:.7rem;color:var(--accent);font-family:'DM Mono',monospace;font-weight:400;letter-spacing:.1em;text-transform:uppercase}
+.stats-bar{display:flex;gap:1.5rem;align-items:center}
+.stat-chip{display:flex;align-items:center;gap:.4rem;font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:.3rem .7rem;border-radius:20px}
+.stat-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ─── Layout ─── */
+main{max-width:1400px;margin:0 auto;padding:2rem;position:relative;z-index:1}
+.hero{text-align:center;padding:3rem 0 2.5rem;margin-bottom:1rem}
+.hero-label{font-family:'DM Mono',monospace;font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.hero-label::before,.hero-label::after{content:'';flex:1;max-width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--accent))}
+.hero-label::after{background:linear-gradient(90deg,var(--accent),transparent)}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.2rem,5vw,3.5rem);line-height:1.05;margin-bottom:1rem;background:linear-gradient(135deg,#fff 30%,var(--accent) 70%,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{color:var(--text2);font-size:1.05rem;max-width:500px;margin:0 auto}
+
+/* ─── Agent Tabs ─── */
+.agent-nav{display:flex;gap:.5rem;margin-bottom:2rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:.4rem;width:fit-content;margin-left:auto;margin-right:auto}
+.agent-tab{font-family:'Syne',sans-serif;font-weight:600;font-size:.85rem;padding:.6rem 1.2rem;border-radius:10px;border:none;background:transparent;color:var(--text2);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+.agent-tab:hover{color:var(--text);background:var(--surface2)}
+.agent-tab.active{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(124,107,255,.4)}
+.agent-tab .tab-icon{font-size:1rem}
+
+/* ─── Agent Panels ─── */
+.agent-panel{display:none;animation:fadeUp .3s ease}
+.agent-panel.active{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:900px){.agent-panel.active{grid-template-columns:1fr}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── Cards ─── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:.3s}
+.card:hover::before{opacity:1}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;display:flex;align-items:center;gap:.5rem}
+.card-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:1.1rem}
+.badge{font-family:'DM Mono',monospace;font-size:.65rem;padding:.2rem .5rem;border-radius:6px;text-transform:uppercase;letter-spacing:.05em}
+.badge-purple{background:rgba(124,107,255,.15);color:var(--accent);border:1px solid rgba(124,107,255,.3)}
+.badge-pink{background:rgba(255,107,157,.15);color:var(--accent2);border:1px solid rgba(255,107,157,.3)}
+.badge-green{background:rgba(107,255,204,.15);color:var(--accent3);border:1px solid rgba(107,255,204,.3)}
+.badge-yellow{background:rgba(255,184,107,.15);color:var(--accent4);border:1px solid rgba(255,184,107,.3)}
+
+/* ─── Form Elements ─── */
+label{display:block;font-size:.8rem;font-weight:500;color:var(--text2);margin-bottom:.4rem;letter-spacing:.02em}
+input,textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:.75rem 1rem;font-family:'Instrument Sans',sans-serif;font-size:.9rem;transition:border-color .2s,box-shadow .2s;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,107,255,.12)}
+textarea{min-height:120px}
+.form-row{margin-bottom:1rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+
+/* ─── Buttons ─── */
+.btn{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;padding:.7rem 1.4rem;border-radius:10px;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.5rem;letter-spacing:.02em}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(124,107,255,.3)}
+.btn-primary:hover{background:#9585ff;transform:translateY(-1px);box-shadow:0 6px 28px rgba(124,107,255,.45)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-pink{background:var(--accent2);color:#fff;box-shadow:0 4px 20px rgba(255,107,157,.3)}
+.btn-green{background:var(--accent3);color:#111;box-shadow:0 4px 20px rgba(107,255,204,.3)}
+.btn-yellow{background:var(--accent4);color:#111;box-shadow:0 4px 20px rgba(255,184,107,.3)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.btn-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem}
+
+/* ─── Loading ─── */
+.loading-wrap{display:flex;align-items:center;justify-content:center;gap:1rem;padding:2rem;color:var(--text2);font-family:'DM Mono',monospace;font-size:.85rem}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+
+/* ─── Result Area ─── */
+.result-box{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-top:1rem;animation:fadeUp .3s ease}
+.result-box h4{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:.75rem;color:var(--accent)}
+.result-text{font-family:'Instrument Sans',sans-serif;font-size:.9rem;line-height:1.7;color:var(--text2);white-space:pre-wrap}
+.result-copy{font-family:'DM Mono',monospace;font-size:.8rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;white-space:pre-wrap;overflow-x:auto;color:var(--accent3);margin-top:.5rem}
+
+/* ─── Action Items / Lists ─── */
+.item-list{list-style:none;display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
+.item-list li{display:flex;align-items:flex-start;gap:.6rem;font-size:.875rem;color:var(--text2);padding:.5rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+.item-list li::before{content:'▸';color:var(--accent);flex-shrink:0;margin-top:.05rem}
+
+/* ─── Task Cards ─── */
+.task-grid{display:flex;flex-direction:column;gap:.6rem;max-height:420px;overflow-y:auto;padding-right:.25rem}
+.task-grid::-webkit-scrollbar{width:4px}
+.task-grid::-webkit-scrollbar-track{background:transparent}
+.task-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.task-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;display:flex;align-items:center;gap:.75rem;transition:.2s}
+.task-card:hover{border-color:var(--accent);transform:translateX(2px)}
+.task-card.completed{opacity:.5}
+.task-card.completed .task-title{text-decoration:line-through}
+.priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.p-high{background:#f87171}
+.p-medium{background:var(--accent4)}
+.p-low{background:var(--accent3)}
+.task-title{font-weight:600;font-size:.875rem;flex:1}
+.task-meta{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2)}
+.task-status{font-family:'DM Mono',monospace;font-size:.65rem;padding:.15rem .45rem;border-radius:5px}
+.s-pending{background:rgba(251,191,36,.1);color:var(--warning)}
+.s-in_progress{background:rgba(124,107,255,.1);color:var(--accent)}
+.s-completed{background:rgba(74,222,128,.1);color:var(--success)}
+
+/* ─── Calendar Events ─── */
+.event-list{display:flex;flex-direction:column;gap:.6rem;max-height:400px;overflow-y:auto}
+.event-card{background:var(--bg);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:.85rem 1rem;transition:.2s}
+.event-card:hover{background:var(--surface2)}
+.event-title{font-weight:600;font-size:.9rem;margin-bottom:.25rem}
+.event-time{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--accent);margin-bottom:.2rem}
+.event-meta{font-size:.8rem;color:var(--text2)}
+
+/* ─── Meeting Pills ─── */
+.decision-pill{display:inline-flex;align-items:center;gap:.3rem;background:rgba(107,255,204,.1);border:1px solid rgba(107,255,204,.2);color:var(--accent3);font-size:.78rem;padding:.25rem .65rem;border-radius:20px;margin:.2rem}
+.sentiment-badge{padding:.3rem .8rem;border-radius:20px;font-family:'DM Mono',monospace;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+.sentiment-positive{background:rgba(74,222,128,.1);color:var(--success);border:1px solid rgba(74,222,128,.2)}
+.sentiment-neutral{background:rgba(148,148,170,.1);color:var(--text2);border:1px solid var(--border)}
+.sentiment-negative{background:rgba(248,113,113,.1);color:var(--danger);border:1px solid rgba(248,113,113,.2)}
+
+/* ─── Tone Selector ─── */
+.tone-chips{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem}
+.tone-chip{font-family:'DM Mono',monospace;font-size:.72rem;padding:.3rem .7rem;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:.15s}
+.tone-chip.selected,.tone-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(124,107,255,.08)}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ─── Notification Toast ─── */
+#toast{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+.toast-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.75rem 1.2rem;font-size:.85rem;display:flex;align-items:center;gap:.5rem;animation:slideIn .3s ease;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:all}
+.toast-item.success{border-left:3px solid var(--success)}
+.toast-item.error{border-left:3px solid var(--danger)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ─── Dashboard row ─── */
+.dashboard-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+@media(max-width:900px){.dashboard-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem;text-align:center;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:var(--glow)}
+.stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:2.2rem;line-height:1;margin-bottom:.25rem}
+.stat-label{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div>Shah Faisal</div>
+        <div class="logo-sub">AI Workflow Agents</div>
+      </div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-chip"><span class="dot"></span><span id="hdr-stat">Gemini 2.5 Flash · Active</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-label">Powered by Shah Faisal Estate</div>
+    <h1>Automate Your<br>Digital Workflows</h1>
+    <p class="hero-sub">4 intelligent agents that handle email replies, meeting summaries, task management &amp; calendar scheduling.</p>
+  </div>
+
+  <!-- Stats Dashboard -->
+  <div class="dashboard-row">
+    <div class="stat-card"><div class="stat-num" id="stat-emails" style="color:var(--accent)">0</div><div class="stat-label">Emails Processed</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-meetings" style="color:var(--accent2)">0</div><div class="stat-label">Meetings Summarized</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-tasks" style="color:var(--accent3)">0</div><div class="stat-label">Tasks Managed</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-events" style="color:var(--accent4)">0</div><div class="stat-label">Events Scheduled</div></div>
+  </div>
+
+  <!-- Agent Navigation -->
+  <div class="agent-nav">
+    <button class="agent-tab active" onclick="switchAgent('email')" id="tab-email">
+      <span class="tab-icon">✉️</span> Email Bot
+    </button>
+    <button class="agent-tab" onclick="switchAgent('meeting')" id="tab-meeting">
+      <span class="tab-icon">🎙️</span> Meeting Bot
+    </button>
+    <button class="agent-tab" onclick="switchAgent('task')" id="tab-task">
+      <span class="tab-icon">✅</span> Task Agent
+    </button>
+    <button class="agent-tab" onclick="switchAgent('calendar')" id="tab-calendar">
+      <span class="tab-icon">📅</span> Calendar AI
+    </button>
+  </div>
+
+  <!-- ═══ EMAIL AGENT ═══ -->
+  <div class="agent-panel active" id="panel-email">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(124,107,255,.15)">✉️</div>
+          Email Reply Generator
+        </div>
+        <span class="badge badge-purple">AI Agent</span>
+      </div>
+      <div class="form-row">
+        <label>Paste the email you received</label>
+        <textarea id="email-content" placeholder="From: client@company.com&#10;Subject: Project Update&#10;&#10;Hi, I wanted to follow up on the status of our project..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>Reply Tone</label>
+        <div class="tone-chips">
+          <div class="tone-chip selected" onclick="selectTone(this,'professional')">Professional</div>
+          <div class="tone-chip" onclick="selectTone(this,'friendly')">Friendly</div>
+          <div class="tone-chip" onclick="selectTone(this,'formal')">Formal</div>
+          <div class="tone-chip" onclick="selectTone(this,'concise')">Concise</div>
+          <div class="tone-chip" onclick="selectTone(this,'empathetic')">Empathetic</div>
+        </div>
+        <input type="hidden" id="email-tone" value="professional"/>
+      </div>
+      <div class="form-row">
+        <label>Additional Context (optional)</label>
+        <input type="text" id="email-context" placeholder="e.g. Project is delayed by 2 weeks due to technical issues"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="runEmailAgent()">⚡ Generate Reply</button>
+        <button class="btn btn-secondary" onclick="clearEmailForm()">Clear</button>
+      </div>
+      <div id="email-loading" class="loading-wrap hidden"><div class="spinner"></div>Generating reply…</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(124,107,255,.15)">📨</div>
+          Generated Reply
+        </div>
+        <button class="btn btn-secondary" style="font-size:.75rem;padding:.35rem .8rem" onclick="copyEmailReply()">Copy</button>
+      </div>
+      <div id="email-result-empty" style="color:var(--text2);font-size:.9rem;padding:2rem 0;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem">✉️</div>
+        Paste an email and click Generate Reply
+      </div>
+      <div id="email-result" class="hidden">
+        <div class="form-row">
+          <label>Subject</label>
+          <div id="email-subject" class="result-copy"></div>
+        </div>
+        <div class="form-row">
+          <label>Reply Body</label>
+          <div id="email-body" class="result-copy" style="min-height:150px"></div>
+        </div>
+        <div id="email-points-wrap">
+          <label>Key Points</label>
+          <ul class="item-list" id="email-key-points"></ul>
+        </div>
+        <div style="margin-top:.75rem;padding:.75rem;background:rgba(124,107,255,.06);border-radius:8px;font-size:.83rem;color:var(--text2)">
+          💡 <strong>Suggested Follow-up:</strong> <span id="email-followup"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MEETING AGENT ═══ -->
+  <div class="agent-panel" id="panel-meeting">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(255,107,157,.15)">🎙️</div>
+          Meeting Summarizer
+        </div>
+        <span class="badge badge-pink">AI Agent</span>
+      </div>
+      <div class="form-row">
+        <label>Meeting Title</label>
+        <input type="text" id="meeting-title" placeholder="Q4 Planning Meeting, Sprint Retrospective…"/>
+      </div>
+      <div class="form-row">
+        <label>Meeting Transcript or Notes</label>
+        <textarea id="meeting-transcript" style="min-height:200px" placeholder="Paste your meeting transcript or rough notes here...&#10;&#10;John: We need to finalize the roadmap by next Friday.&#10;Sarah: I can handle the design review by Wednesday.&#10;Mike: Let's also discuss the budget allocation..."></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-pink" onclick="runMeetingAgent()">🎙️ Summarize Meeting</button>
+        <button class="btn btn-secondary" onclick="clearMeetingForm()">Clear</button>
+      </div>
+      <div id="meeting-loading" class="loading-wrap hidden"><div class="spinner"></div>Analyzing meeting…</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(255,107,157,.15)">📋</div>
+          Meeting Summary
+        </div>
+      </div>
+      <div id="meeting-result-empty" style="color:var(--text2);font-size:.9rem;padding:2rem 0;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem">🎙️</div>
+        Paste a transcript and click Summarize
+      </div>
+      <div id="meeting-result" class="hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <div class="card-title" id="meeting-result-title" style="font-size:.95rem"></div>
+          <span id="meeting-sentiment" class="sentiment-badge"></span>
+        </div>
+        <div class="form-row">
+          <label>Summary</label>
+          <div id="meeting-summary" class="result-copy"></div>
+        </div>
+        <div class="form-row">
+          <label>Action Items</label>
+          <ul class="item-list" id="meeting-actions"></ul>
+        </div>
+        <div class="form-row">
+          <label>Decisions Made</label>
+          <div id="meeting-decisions"></div>
+        </div>
+        <div class="form-row">
+          <label>Next Meeting Agenda</label>
+          <ul class="item-list" id="meeting-agenda"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TASK AGENT ═══ -->
+  <div class="agent-panel" id="panel-task">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(107,255,204,.15)">✅</div>
+          Task Manager Agent
+        </div>
+        <span class="badge badge-green">AI Agent</span>
+      </div>
+      <div class="form-row">
+        <label>Tell the agent what to do</label>
+        <textarea id="task-input" placeholder="Examples:&#10;• Add task: Review marketing proposal by Friday, high priority&#10;• Mark the design task as completed&#10;• What should I work on first today?&#10;• Create a task list for launching our new product"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="runTaskAgent()">✅ Run Task Agent</button>
+        <button class="btn btn-secondary" onclick="clearTaskForm()">Clear</button>
+      </div>
+      <div id="task-loading" class="loading-wrap hidden"><div class="spinner"></div>Managing tasks…</div>
+      <div id="task-message" class="result-box hidden">
+        <h4>Agent Response</h4>
+        <div id="task-msg-text" class="result-text"></div>
+        <div id="task-tip" style="margin-top:.75rem;padding:.6rem .9rem;background:rgba(107,255,204,.06);border-radius:8px;font-size:.82rem;color:var(--accent3)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(107,255,204,.15)">📌</div>
+          Your Tasks
+        </div>
+        <span id="task-count" class="badge badge-green">0 tasks</span>
+      </div>
+      <div id="task-empty" style="color:var(--text2);font-size:.9rem;padding:2rem 0;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem">✅</div>
+        No tasks yet. Ask the agent to create some!
+      </div>
+      <div class="task-grid" id="task-list"></div>
+    </div>
+  </div>
+
+  <!-- ═══ CALENDAR AGENT ═══ -->
+  <div class="agent-panel" id="panel-calendar">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(255,184,107,.15)">📅</div>
+          Calendar Assistant
+        </div>
+        <span class="badge badge-yellow">AI Agent</span>
+      </div>
+      <div class="form-row">
+        <label>What would you like to schedule?</label>
+        <textarea id="calendar-input" placeholder="Examples:&#10;• Schedule a team standup every Monday at 9 AM&#10;• Book a client meeting next Tuesday at 2 PM for 1 hour&#10;• What meetings do I have this week?&#10;• Cancel the project review on Friday&#10;• Schedule a deep work block tomorrow from 10-12"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-yellow" onclick="runCalendarAgent()">📅 Schedule with AI</button>
+        <button class="btn btn-secondary" onclick="clearCalendarForm()">Clear</button>
+      </div>
+      <div id="calendar-loading" class="loading-wrap hidden"><div class="spinner"></div>Processing calendar…</div>
+      <div id="calendar-message" class="result-box hidden">
+        <h4>Calendar Agent Response</h4>
+        <div id="calendar-msg-text" class="result-text"></div>
+        <div id="calendar-suggestions" style="margin-top:.75rem"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background:rgba(255,184,107,.15)">🗓️</div>
+          Upcoming Events
+        </div>
+        <span id="event-count" class="badge badge-yellow">0 events</span>
+      </div>
+      <div id="calendar-empty" style="color:var(--text2);font-size:.9rem;padding:2rem 0;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem">📅</div>
+        No events scheduled yet
+      </div>
+      <div class="event-list" id="event-list"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Toast container -->
+<div id="toast"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let selectedTone = 'professional';
+
+// ── Agent Switcher ───────────────────────────────────────────────────────────
+function switchAgent(name) {
+  document.querySelectorAll('.agent-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.agent-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = 'toast-item ' + type;
+  el.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Tone Selector ─────────────────────────────────────────────────────────────
+function selectTone(el, tone) {
+  document.querySelectorAll('.tone-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTone = tone;
+  document.getElementById('email-tone').value = tone;
+}
+
+// ── Stats Refresh ─────────────────────────────────────────────────────────────
+async function refreshStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    document.getElementById('stat-emails').textContent = data.emails_processed;
+    document.getElementById('stat-meetings').textContent = data.meetings_summarized;
+    document.getElementById('stat-tasks').textContent = data.tasks_total;
+    document.getElementById('stat-events').textContent = data.events_scheduled;
+  } catch(e) {}
+}
+setInterval(refreshStats, 10000);
+refreshStats();
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  EMAIL AGENT
+// ══════════════════════════════════════════════════════════════════════════════
+async function runEmailAgent() {
+  const content = document.getElementById('email-content').value.trim();
+  if (!content) { toast('Please paste an email first', 'error'); return; }
+
+  const btn = event.target;
+  btn.disabled = true;
+  document.getElementById('email-loading').classList.remove('hidden');
+  document.getElementById('email-result').classList.add('hidden');
+  document.getElementById('email-result-empty').classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/email-agent', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        email_content: content,
+        tone: selectedTone,
+        context: document.getElementById('email-context').value
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const r = data.result;
+      document.getElementById('email-subject').textContent = r.subject || '';
+      document.getElementById('email-body').textContent = r.body || '';
+      document.getElementById('email-followup').textContent = r.suggested_followup || '—';
+      const kp = document.getElementById('email-key-points');
+      kp.innerHTML = (r.key_points || []).map(p => `<li>${p}</li>`).join('');
+      document.getElementById('email-result').classList.remove('hidden');
+      toast('Email reply generated!');
+      refreshStats();
+    } else { toast('Error generating reply', 'error'); }
+  } catch(e) { toast('Network error', 'error'); }
+
+  btn.disabled = false;
+  document.getElementById('email-loading').classList.add('hidden');
+}
+
+function copyEmailReply() {
+  const subj = document.getElementById('email-subject').textContent;
+  const body = document.getElementById('email-body').textContent;
+  navigator.clipboard.writeText(subj + '\n\n' + body);
+  toast('Copied to clipboard!');
+}
+
+function clearEmailForm() {
+  document.getElementById('email-content').value = '';
+  document.getElementById('email-context').value = '';
+  document.getElementById('email-result').classList.add('hidden');
+  document.getElementById('email-result-empty').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  MEETING AGENT
+// ══════════════════════════════════════════════════════════════════════════════
+async function runMeetingAgent() {
+  const transcript = document.getElementById('meeting-transcript').value.trim();
+  if (!transcript) { toast('Please paste meeting transcript', 'error'); return; }
+
+  const btn = event.target;
+  btn.disabled = true;
+  document.getElementById('meeting-loading').classList.remove('hidden');
+  document.getElementById('meeting-result').classList.add('hidden');
+  document.getElementById('meeting-result-empty').classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/meeting-agent', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        transcript,
+        title: document.getElementById('meeting-title').value || 'Meeting'
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const r = data.result;
+      document.getElementById('meeting-result-title').textContent = r.title || 'Meeting';
+      document.getElementById('meeting-summary').textContent = r.summary || '';
+
+      const sentEl = document.getElementById('meeting-sentiment');
+      sentEl.textContent = r.sentiment || 'neutral';
+      sentEl.className = 'sentiment-badge sentiment-' + (r.sentiment || 'neutral');
+
+      const actions = document.getElementById('meeting-actions');
+      actions.innerHTML = (r.action_items || []).map(a =>
+        `<li><strong>${a.owner || 'Team'}:</strong> ${a.task} ${a.deadline ? `<em>(${a.deadline})</em>` : ''}</li>`
+      ).join('');
+
+      const decisions = document.getElementById('meeting-decisions');
+      decisions.innerHTML = (r.decisions || []).map(d => `<span class="decision-pill">✓ ${d}</span>`).join('');
+
+      const agenda = document.getElementById('meeting-agenda');
+      agenda.innerHTML = (r.next_meeting_agenda || []).map(i => `<li>${i}</li>`).join('');
+
+      document.getElementById('meeting-result').classList.remove('hidden');
+      toast('Meeting summarized!');
+      refreshStats();
+    } else { toast('Error summarizing meeting', 'error'); }
+  } catch(e) { toast('Network error', 'error'); }
+
+  btn.disabled = false;
+  document.getElementById('meeting-loading').classList.add('hidden');
+}
+
+function clearMeetingForm() {
+  document.getElementById('meeting-transcript').value = '';
+  document.getElementById('meeting-title').value = '';
+  document.getElementById('meeting-result').classList.add('hidden');
+  document.getElementById('meeting-result-empty').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  TASK AGENT
+// ══════════════════════════════════════════════════════════════════════════════
+async function runTaskAgent() {
+  const input = document.getElementById('task-input').value.trim();
+  if (!input) { toast('Please enter a task command', 'error'); return; }
+
+  const btn = event.target;
+  btn.disabled = true;
+  document.getElementById('task-loading').classList.remove('hidden');
+
+  try {
+    const res = await fetch('/api/task-agent', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ input })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const r = data.result;
+      document.getElementById('task-msg-text').textContent = r.message || '';
+      const tipEl = document.getElementById('task-tip');
+      if (r.productivity_tip) {
+        tipEl.textContent = '💡 Tip: ' + r.productivity_tip;
+        tipEl.style.display = 'block';
+      } else {
+        tipEl.style.display = 'none';
+      }
+      document.getElementById('task-message').classList.remove('hidden');
+      renderTasks(data.all_tasks || []);
+      toast('Task agent executed!');
+      refreshStats();
+    }
+  } catch(e) { toast('Network error', 'error'); }
+
+  btn.disabled = false;
+  document.getElementById('task-loading').classList.add('hidden');
+}
+
+function renderTasks(tasks) {
+  const list = document.getElementById('task-list');
+  const empty = document.getElementById('task-empty');
+  const count = document.getElementById('task-count');
+  count.textContent = tasks.length + ' task' + (tasks.length !== 1 ? 's' : '');
+
+  if (!tasks.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  list.innerHTML = tasks.map(t => `
+    <div class="task-card ${t.status === 'completed' ? 'completed' : ''}">
+      <div class="priority-dot p-${t.priority || 'medium'}"></div>
+      <div style="flex:1">
+        <div class="task-title">${t.title || 'Untitled'}</div>
+        ${t.due_date ? `<div class="task-meta">📅 ${t.due_date}</div>` : ''}
+      </div>
+      <span class="task-status s-${(t.status||'pending').replace(' ','_')}">${t.status || 'pending'}</span>
+    </div>
+  `).join('');
+}
+
+function clearTaskForm() {
+  document.getElementById('task-input').value = '';
+  document.getElementById('task-message').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CALENDAR AGENT
+// ══════════════════════════════════════════════════════════════════════════════
+async function runCalendarAgent() {
+  const request = document.getElementById('calendar-input').value.trim();
+  if (!request) { toast('Please enter a calendar request', 'error'); return; }
+
+  const btn = event.target;
+  btn.disabled = true;
+  document.getElementById('calendar-loading').classList.remove('hidden');
+
+  try {
+    const res = await fetch('/api/calendar-agent', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ request })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const r = data.result;
+      document.getElementById('calendar-msg-text').textContent = r.message || '';
+      const sugEl = document.getElementById('calendar-suggestions');
+      if (r.suggestions && r.suggestions.length) {
+        sugEl.innerHTML = r.suggestions.map(s => `<div style="font-size:.8rem;color:var(--accent4);margin-top:.3rem">💡 ${s}</div>`).join('');
+      } else { sugEl.innerHTML = ''; }
+      document.getElementById('calendar-message').classList.remove('hidden');
+      renderEvents(data.all_events || []);
+      toast('Calendar updated!');
+      refreshStats();
+    }
+  } catch(e) { toast('Network error', 'error'); }
+
+  btn.disabled = false;
+  document.getElementById('calendar-loading').classList.add('hidden');
+}
+
+function renderEvents(events) {
+  const list = document.getElementById('event-list');
+  const empty = document.getElementById('calendar-empty');
+  const count = document.getElementById('event-count');
+  count.textContent = events.length + ' event' + (events.length !== 1 ? 's' : '');
+
+  if (!events.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const sorted = [...events].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  list.innerHTML = sorted.map(ev => `
+    <div class="event-card">
+      <div class="event-title">${ev.title || 'Untitled Event'}</div>
+      <div class="event-time">📅 ${ev.date || '—'} · ${ev.start_time || '?'} – ${ev.end_time || '?'}</div>
+      ${ev.location ? `<div class="event-meta">📍 ${ev.location}</div>` : ''}
+      ${ev.attendees && ev.attendees.length ? `<div class="event-meta">👥 ${ev.attendees.join(', ')}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function clearCalendarForm() {
+  document.getElementById('calendar-input').value = '';
+  document.getElementById('calendar-message').classList.add('hidden');
+}
+</script>
+</body>
+</html>
