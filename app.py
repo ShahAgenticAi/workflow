@@ -16,7 +16,7 @@ app.secret_key = os.urandom(24)
 
 # ── Gemini Setup ────────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY_HERE")
-genai.configure(api_key="AIzaSyCwvBa0j-tvLcuXyUyfPnN2SI7IxWiCNsg")
+genai.configure(api_key="")
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 # ── In-memory store (replace with DB in production) ─────────────────────────
